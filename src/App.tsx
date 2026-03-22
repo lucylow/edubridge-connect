@@ -27,7 +27,17 @@ function PrivateRoute({ children, allowedRoles }: { children: React.ReactNode; a
   return <>{children}</>;
 }
 
-function AppRoutes() {
+function AppLayout() {
+  const { user } = useAuth();
+  const isLanding = window.location.pathname === "/";
+  return (
+    <>
+      {(!isLanding || user) && <AppNavbar />}
+      <AppRoutes />
+    </>
+  );
+}
+
   const { user } = useAuth();
 
   return (
