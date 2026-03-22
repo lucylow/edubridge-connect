@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,30 +29,25 @@ function PrivateRoute({ children, allowedRoles }: { children: React.ReactNode; a
 
 function AppLayout() {
   const { user } = useAuth();
-  const isLanding = window.location.pathname === "/";
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
+
   return (
     <>
       {(!isLanding || user) && <AppNavbar />}
-      <AppRoutes />
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/login" element={user ? <Navigate to={user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard"} /> : <Login />} />
+        <Route path="/register" element={user ? <Navigate to={user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard"} /> : <Register />} />
+        <Route path="/tutor/dashboard" element={<PrivateRoute allowedRoles={["tutor"]}><TutorDashboard /></PrivateRoute>} />
+        <Route path="/learner/dashboard" element={<PrivateRoute allowedRoles={["learner"]}><LearnerDashboard /></PrivateRoute>} />
+        <Route path="/matching" element={<PrivateRoute><Matching /></PrivateRoute>} />
+        <Route path="/schedule/:tutorId" element={<PrivateRoute><Schedule /></PrivateRoute>} />
+        <Route path="/session/:sessionId" element={<PrivateRoute><SessionRoom /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
     </>
-  );
-}
-
-  const { user } = useAuth();
-
-  return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/login" element={user ? <Navigate to={user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard"} /> : <Login />} />
-      <Route path="/register" element={user ? <Navigate to={user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard"} /> : <Register />} />
-      <Route path="/tutor/dashboard" element={<PrivateRoute allowedRoles={["tutor"]}><TutorDashboard /></PrivateRoute>} />
-      <Route path="/learner/dashboard" element={<PrivateRoute allowedRoles={["learner"]}><LearnerDashboard /></PrivateRoute>} />
-      <Route path="/matching" element={<PrivateRoute><Matching /></PrivateRoute>} />
-      <Route path="/schedule/:tutorId" element={<PrivateRoute><Schedule /></PrivateRoute>} />
-      <Route path="/session/:sessionId" element={<PrivateRoute><SessionRoom /></PrivateRoute>} />
-      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
   );
 }
 
@@ -63,8 +58,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <AppNavbar />
-          <AppRoutes />
+          <AppLayout />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
