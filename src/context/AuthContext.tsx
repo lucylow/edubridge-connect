@@ -1,10 +1,10 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { login as apiLogin, register as apiRegister, getCurrentUser, type User } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
+import { getCurrentProfile, type User } from "@/services/api";
 
 interface AuthState {
   user: User | null;
   loading: boolean;
-  token: string | null;
   login: (email: string, password: string) => Promise<User>;
   register: (data: { name: string; email: string; password: string; role: "tutor" | "learner"; subjects: string[]; grade?: number }) => Promise<User>;
   logout: () => void;
@@ -21,43 +21,84 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(localStorage.getItem("edubridge_token"));
 
   useEffect(() => {
-    if (token) {
-      getCurrentUser(token)
-        .then(setUser)
-        .catch(() => { localStorage.removeItem("edubridge_token"); setToken(null); })
-        .finally(() => setLoading(false));
-    } else {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        // Use setTimeout to avoid potential deadlock with Supabase auth
+        setTimeout(async () => {
+          const profile = await getCurrentProfile();
+          setUser(profile);
+          setLoading(false);
+        }, 0);
+      } else {
+        setUser(null);
+        setLoading(false);
+      }
+    });
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await getCurrentProfile();
+        setUser(profile);
+      }
       setLoading(false);
-    }
-  }, [token]);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await apiLogin(email, password);
-    localStorage.setItem("edubridge_token", res.token);
-    setToken(res.token);
-    setUser(res.user);
-    return res.user;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
+    const profile = await getCurrentProfile();
+    if (!profile) throw new Error("Profile not found");
+    setUser(profile);
+    return profile;
   };
 
   const register = async (data: { name: string; email: string; password: string; role: "tutor" | "learner"; subjects: string[]; grade?: number }) => {
-    const res = await apiRegister(data);
-    localStorage.setItem("edubridge_token", res.token);
-    setToken(res.token);
-    setUser(res.user);
-    return res.user;
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: { name: data.name, role: data.role },
+      },
+    });
+    if (error) throw new Error(error.message);
+    if (!authData.user) throw new Error("Signup failed");
+
+    // Wait briefly for the trigger to create the profile
+    await new Promise(r => setTimeout(r, 500));
+
+    // Update profile with grade if learner
+    if (data.grade) {
+      await supabase.from("profiles").update({ grade_level: data.grade }).eq("user_id", authData.user.id);
+    }
+
+    // Insert user subjects
+    if (data.subjects.length > 0) {
+      const { data: subjectRows } = await supabase.from("subjects").select("id, name").in("name", data.subjects);
+      if (subjectRows && subjectRows.length > 0) {
+        await supabase.from("user_subjects").insert(
+          subjectRows.map(s => ({ user_id: authData.user!.id, subject_id: s.id }))
+        );
+      }
+    }
+
+    const profile = await getCurrentProfile();
+    if (!profile) throw new Error("Profile not found after registration");
+    setUser(profile);
+    return profile;
   };
 
-  const logout = () => {
-    localStorage.removeItem("edubridge_token");
-    setToken(null);
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, token, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,9 +1,8 @@
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+import { supabase } from "@/integrations/supabase/client";
 
 export interface User {
-  id: number;
+  id: string;
   email: string;
-  password?: string;
   role: "tutor" | "learner";
   name: string;
   subjects: string[];
@@ -15,10 +14,10 @@ export interface User {
 }
 
 export interface Session {
-  id: number;
-  tutorId: number;
+  id: string;
+  tutorId: string;
   tutorName?: string;
-  learnerId: number;
+  learnerId: string;
   learnerName?: string;
   subject?: string;
   scheduledStart: string;
@@ -31,87 +30,143 @@ export interface MatchResult {
   breakdown: { subject: number; availability: number; rating: number };
 }
 
-const mockUsers: User[] = [
-  { id: 1, email: "tutor@example.com", password: "pass", role: "tutor", name: "Alex Chen", subjects: ["Algebra", "Python", "Calculus"], bio: "CS major with 3 years tutoring experience", rating: 4.9, sessionsCompleted: 47 },
-  { id: 2, email: "learner@example.com", password: "pass", role: "learner", name: "Jamie Smith", subjects: ["Algebra"], grade: 10, bio: "10th grader looking for math help", rating: 4.7, sessionsCompleted: 12 },
-  { id: 3, email: "priya@example.com", password: "pass", role: "tutor", name: "Priya Mehta", subjects: ["Algebra", "AP Biology", "Chemistry"], bio: "Pre-med student, specializes in AP Bio", rating: 4.8, sessionsCompleted: 34 },
-  { id: 4, email: "carlos@example.com", password: "pass", role: "tutor", name: "Carlos Rivera", subjects: ["English Essay", "History", "Spanish"], bio: "English Lit major, published writer", rating: 4.6, sessionsCompleted: 28 },
-  { id: 5, email: "maria@example.com", password: "pass", role: "tutor", name: "Maria Santos", subjects: ["Python", "JavaScript", "Algebra"], bio: "CS sophomore, teaches beginners with patience", rating: 4.95, sessionsCompleted: 52 },
-];
-
-const sessions: Session[] = [
-  { id: 101, tutorId: 1, tutorName: "Alex Chen", learnerId: 2, learnerName: "Jamie Smith", subject: "Algebra", scheduledStart: new Date(Date.now() + 86400000).toISOString(), status: "scheduled" },
-  { id: 102, tutorId: 3, tutorName: "Priya Mehta", learnerId: 2, learnerName: "Jamie Smith", subject: "AP Biology", scheduledStart: new Date(Date.now() + 172800000).toISOString(), status: "scheduled" },
-];
-
-export async function login(email: string, password: string) {
-  await delay(600);
-  const user = mockUsers.find(u => u.email === email && u.password === password);
-  if (!user) throw new Error("Invalid email or password");
-  const { password: _, ...safeUser } = user;
-  return { token: `mock-jwt-${user.id}`, user: safeUser as User };
+// Helper to convert profile row + subjects to User
+function profileToUser(profile: any, subjects: string[] = []): User {
+  return {
+    id: profile.user_id,
+    email: profile.email || "",
+    role: profile.role,
+    name: profile.name,
+    subjects,
+    grade: profile.grade_level ?? undefined,
+    bio: profile.bio ?? undefined,
+    avatar: profile.avatar_url ?? undefined,
+    rating: profile.rating ? parseFloat(profile.rating) : undefined,
+    sessionsCompleted: profile.sessions_completed ?? 0,
+  };
 }
 
-export async function register(data: { name: string; email: string; password: string; role: "tutor" | "learner"; subjects: string[]; grade?: number }) {
-  await delay(600);
-  if (mockUsers.find(u => u.email === data.email)) throw new Error("Email already registered");
-  const newUser: User = { id: Date.now(), ...data, bio: "", rating: 5.0, sessionsCompleted: 0 };
-  mockUsers.push(newUser);
-  const { password: _, ...safeUser } = newUser;
-  return { token: `mock-jwt-${newUser.id}`, user: safeUser as User };
-}
+export async function getCurrentProfile(): Promise<User | null> {
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return null;
 
-export async function getCurrentUser(token: string): Promise<User> {
-  await delay(300);
-  const id = parseInt(token.split("-").pop() || "1");
-  const user = mockUsers.find(u => u.id === id);
-  if (!user) throw new Error("User not found");
-  const { password: _, ...safeUser } = user;
-  return safeUser as User;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", authUser.id)
+    .single();
+  if (!profile) return null;
+
+  const { data: userSubjects } = await supabase
+    .from("user_subjects")
+    .select("subject_id, subjects(name)")
+    .eq("user_id", authUser.id);
+
+  const subjects = (userSubjects || []).map((us: any) => us.subjects?.name).filter(Boolean);
+
+  return profileToUser({ ...profile, email: authUser.email }, subjects);
 }
 
 export async function getMatches(subject: string): Promise<MatchResult[]> {
-  await delay(800);
-  const tutors = mockUsers.filter(u => u.role === "tutor");
+  // Get all tutors
+  const { data: tutors } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("role", "tutor");
+  if (!tutors || tutors.length === 0) return [];
+
+  // Get their subjects
+  const tutorIds = tutors.map(t => t.user_id);
+  const { data: allUserSubjects } = await supabase
+    .from("user_subjects")
+    .select("user_id, subjects(name)")
+    .in("user_id", tutorIds);
+
+  const subjectsByUser: Record<string, string[]> = {};
+  (allUserSubjects || []).forEach((us: any) => {
+    if (!subjectsByUser[us.user_id]) subjectsByUser[us.user_id] = [];
+    if (us.subjects?.name) subjectsByUser[us.user_id].push(us.subjects.name);
+  });
+
   return tutors
     .map(t => {
-      const subjectScore = t.subjects.some(s => s.toLowerCase().includes(subject.toLowerCase())) ? 0.9 + Math.random() * 0.1 : 0.2 + Math.random() * 0.3;
+      const tutorSubjects = subjectsByUser[t.user_id] || [];
+      const subjectScore = tutorSubjects.some(s => s.toLowerCase().includes(subject.toLowerCase()))
+        ? 0.9 + Math.random() * 0.1
+        : 0.2 + Math.random() * 0.3;
       const availScore = 0.6 + Math.random() * 0.4;
-      const ratingScore = (t.rating || 4.5) / 5;
+      const ratingScore = (parseFloat(t.rating) || 4.5) / 5;
       const total = subjectScore * 0.6 + availScore * 0.3 + ratingScore * 0.1;
+
       return {
-        user: { ...t, password: undefined } as User,
+        user: profileToUser(t, tutorSubjects),
         score: Math.round(total * 100),
-        breakdown: { subject: Math.round(subjectScore * 100), availability: Math.round(availScore * 100), rating: Math.round(ratingScore * 100) },
+        breakdown: {
+          subject: Math.round(subjectScore * 100),
+          availability: Math.round(availScore * 100),
+          rating: Math.round(ratingScore * 100),
+        },
       };
     })
     .sort((a, b) => b.score - a.score);
 }
 
-export async function getUserSessions(userId: number): Promise<Session[]> {
-  await delay(400);
-  return sessions.filter(s => s.tutorId === userId || s.learnerId === userId);
+export async function getUserSessions(userId: string): Promise<Session[]> {
+  const { data } = await supabase
+    .from("sessions")
+    .select(`
+      id, tutor_id, learner_id, subject, scheduled_start, status,
+      tutor:profiles!sessions_tutor_id_fkey(name),
+      learner:profiles!sessions_learner_id_fkey(name)
+    `)
+    .or(`tutor_id.eq.${userId},learner_id.eq.${userId}`)
+    .order("scheduled_start", { ascending: true });
+
+  return (data || []).map((s: any) => ({
+    id: s.id,
+    tutorId: s.tutor_id,
+    tutorName: s.tutor?.name,
+    learnerId: s.learner_id,
+    learnerName: s.learner?.name,
+    subject: s.subject,
+    scheduledStart: s.scheduled_start,
+    status: s.status,
+  }));
 }
 
-export async function createSession(data: { tutorId: number; learnerId: number; subject: string; scheduledStart: string }): Promise<Session> {
-  await delay(500);
-  const tutor = mockUsers.find(u => u.id === data.tutorId);
-  const learner = mockUsers.find(u => u.id === data.learnerId);
-  const newSession: Session = {
-    id: Date.now(),
-    ...data,
-    tutorName: tutor?.name,
-    learnerName: learner?.name,
-    status: "scheduled",
+export async function createSession(data: {
+  tutorId: string;
+  learnerId: string;
+  subject: string;
+  scheduledStart: string;
+}): Promise<Session> {
+  const { data: session, error } = await supabase
+    .from("sessions")
+    .insert({
+      tutor_id: data.tutorId,
+      learner_id: data.learnerId,
+      subject: data.subject,
+      scheduled_start: data.scheduledStart,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  return {
+    id: session.id,
+    tutorId: session.tutor_id,
+    learnerId: session.learner_id,
+    subject: session.subject,
+    scheduledStart: session.scheduled_start,
+    status: session.status as Session["status"],
   };
-  sessions.push(newSession);
-  return newSession;
 }
 
 export async function generateLessonPlan(subject: string): Promise<string> {
-  await delay(1200);
-  const plans: Record<string, string> = {
-    default: `📘 Lesson Plan: ${subject}\n\n1. Warm-up (5 min)\n   • Review previous concepts\n   • Quick knowledge check\n\n2. Core Lesson (20 min)\n   • Introduce new topic with examples\n   • Guided practice problems\n\n3. Independent Practice (15 min)\n   • Worksheet with 5 problems\n   • Apply concepts to real-world scenarios\n\n4. Wrap-up (5 min)\n   • Summarize key takeaways\n   • Assign practice for next session`,
-  };
-  return plans.default;
+  const { data, error } = await supabase.functions.invoke("generate-lesson-plan", {
+    body: { subject },
+  });
+  if (error) throw new Error(error.message);
+  return data.lessonPlan;
 }
