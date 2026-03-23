@@ -147,7 +147,7 @@ export async function getUserSessions(userId: string): Promise<Session[]> {
     learner_id: string;
     subject: string;
     scheduled_start: string;
-    status: "scheduled" | "completed" | "cancelled";
+    status: "scheduled" | "ongoing" | "completed" | "cancelled";
     tutor?: { name: string } | null;
     learner?: { name: string } | null;
   }
