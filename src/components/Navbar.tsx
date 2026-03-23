@@ -28,8 +28,6 @@ export default function Navbar() {
     switch (user.role) {
       case 'tutor':
         return '/tutor/dashboard';
-      case 'admin':
-        return '/admin/dashboard';
       default:
         return '/learner/dashboard';
     }

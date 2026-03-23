@@ -47,7 +47,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <Loader />;
   if (user) {
-    const dashboard = user.role === 'tutor' ? '/tutor/dashboard' : user.role === 'admin' ? '/admin/dashboard' : '/learner/dashboard';
+    const dashboard = user.role === 'tutor' ? '/tutor/dashboard' : '/learner/dashboard';
     return <Navigate to={dashboard} />;
   }
   return <>{children}</>;

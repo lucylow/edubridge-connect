@@ -21,7 +21,7 @@ export interface Session {
   learnerName?: string;
   subject?: string;
   scheduledStart: string;
-  status: "scheduled" | "completed" | "cancelled";
+  status: "scheduled" | "ongoing" | "completed" | "cancelled";
 }
 
 export interface MatchResult {
