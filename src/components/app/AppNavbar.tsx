@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { BookOpen, LogOut, User, LayoutDashboard } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const AppNavbar = () => {
   const { user, logout } = useAuth();
@@ -22,6 +23,7 @@ const AppNavbar = () => {
           EduBridge
         </Link>
         <div className="flex items-center gap-3">
+          <ThemeToggle />
           {user ? (
             <>
               <Link to={dashboardPath}>

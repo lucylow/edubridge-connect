@@ -48,9 +48,56 @@
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
     --sidebar-accent: 240 4.8% 95.9%;
+
+    /* Toast theming */
+    --toast-bg: #ffffff;
+    --toast-color: #1f2937;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 213 31% 91%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 168 65% 31%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 213 31% 91%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 213 31% 91%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 168 65% 31%;
+
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 213 31% 91%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent-foreground: 213 31% 91%;
+    --sidebar-border: 217 33% 17%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Toast theming dark mode */
+    --toast-bg: #1f2937;
+    --toast-color: #f3f4f6;
   }
 }
 

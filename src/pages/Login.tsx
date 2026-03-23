@@ -20,8 +20,8 @@ const Login = () => {
     try {
       const user = await login(email, password);
       navigate(user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
     }

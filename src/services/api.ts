@@ -30,8 +30,20 @@ export interface MatchResult {
   breakdown: { subject: number; availability: number; rating: number };
 }
 
+interface ProfileRow {
+  user_id: string;
+  email?: string;
+  role: "tutor" | "learner";
+  name: string;
+  grade_level?: number;
+  bio?: string;
+  avatar_url?: string;
+  rating?: string | number;
+  sessions_completed?: number;
+}
+
 // Helper to convert profile row + subjects to User
-function profileToUser(profile: any, subjects: string[] = []): User {
+function profileToUser(profile: ProfileRow, subjects: string[] = []): User {
   return {
     id: profile.user_id,
     email: profile.email || "",
@@ -41,7 +53,7 @@ function profileToUser(profile: any, subjects: string[] = []): User {
     grade: profile.grade_level ?? undefined,
     bio: profile.bio ?? undefined,
     avatar: profile.avatar_url ?? undefined,
-    rating: profile.rating ? parseFloat(profile.rating) : undefined,
+    rating: profile.rating ? parseFloat(profile.rating.toString()) : undefined,
     sessionsCompleted: profile.sessions_completed ?? 0,
   };
 }
@@ -62,7 +74,10 @@ export async function getCurrentProfile(): Promise<User | null> {
     .select("subject_id, subjects(name)")
     .eq("user_id", authUser.id);
 
-  const subjects = (userSubjects || []).map((us: any) => us.subjects?.name).filter(Boolean);
+  interface UserSubjectRow {
+    subjects?: { name: string } | null;
+  }
+  const subjects = (userSubjects || []).map((us: UserSubjectRow) => us.subjects?.name).filter((name): name is string => Boolean(name));
 
   return profileToUser({ ...profile, email: authUser.email }, subjects);
 }
@@ -82,8 +97,12 @@ export async function getMatches(subject: string): Promise<MatchResult[]> {
     .select("user_id, subjects(name)")
     .in("user_id", tutorIds as string[]);
 
+  interface UserSubjectWithId {
+    user_id: string;
+    subjects?: { name: string } | null;
+  }
   const subjectsByUser: Record<string, string[]> = {};
-  (allUserSubjects || []).forEach((us: any) => {
+  (allUserSubjects || []).forEach((us: UserSubjectWithId) => {
     if (!subjectsByUser[us.user_id]) subjectsByUser[us.user_id] = [];
     if (us.subjects?.name) subjectsByUser[us.user_id].push(us.subjects.name);
   });
@@ -122,7 +141,17 @@ export async function getUserSessions(userId: string): Promise<Session[]> {
     .or(`tutor_id.eq.${userId},learner_id.eq.${userId}`)
     .order("scheduled_start", { ascending: true });
 
-  return (data || []).map((s: any) => ({
+  interface SessionRow {
+    id: string;
+    tutor_id: string;
+    learner_id: string;
+    subject: string;
+    scheduled_start: string;
+    status: "scheduled" | "completed" | "cancelled";
+    tutor?: { name: string } | null;
+    learner?: { name: string } | null;
+  }
+  return (data || []).map((s: SessionRow) => ({
     id: s.id,
     tutorId: s.tutor_id,
     tutorName: s.tutor?.name,
