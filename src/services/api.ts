@@ -95,7 +95,7 @@ export async function getMatches(subject: string): Promise<MatchResult[]> {
         ? 0.9 + Math.random() * 0.1
         : 0.2 + Math.random() * 0.3;
       const availScore = 0.6 + Math.random() * 0.4;
-      const ratingScore = (parseFloat(t.rating) || 4.5) / 5;
+      const ratingScore = (Number(t.rating) || 4.5) / 5;
       const total = subjectScore * 0.6 + availScore * 0.3 + ratingScore * 0.1;
 
       return {
