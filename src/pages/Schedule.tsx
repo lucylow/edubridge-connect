@@ -24,7 +24,7 @@ const Schedule = () => {
     try {
       const scheduledStart = new Date(`${date}T${time.replace(" AM", ":00").replace(" PM", ":00")}`).toISOString();
       const session = await createSession({
-        tutorId: parseInt(tutorId || "0"),
+        tutorId: tutorId || "",
         learnerId: user!.id,
         subject,
         scheduledStart,
