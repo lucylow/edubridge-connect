@@ -80,7 +80,7 @@ export async function getMatches(subject: string): Promise<MatchResult[]> {
   const { data: allUserSubjects } = await supabase
     .from("user_subjects")
     .select("user_id, subjects(name)")
-    .in("user_id", tutorIds);
+    .in("user_id", tutorIds as string[]);
 
   const subjectsByUser: Record<string, string[]> = {};
   (allUserSubjects || []).forEach((us: any) => {
