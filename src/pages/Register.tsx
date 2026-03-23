@@ -27,7 +27,7 @@ const Register = () => {
       const user = await register(form);
       navigate(user.role === "tutor" ? "/tutor/dashboard" : "/learner/dashboard");
     } catch (err: unknown) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Registration failed");
     } finally {
       setLoading(false);
     }
