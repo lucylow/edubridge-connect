@@ -20,7 +20,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import TutorDashboard from "./pages/TutorDashboard";
 import LearnerDashboard from "./pages/LearnerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+
 import Matching from "./pages/Matching";
 import Schedule from "./pages/Schedule";
 import SessionRoom from "./pages/SessionRoom";
