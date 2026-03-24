@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getMatches, type MatchResult } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Calendar, Loader2 } from "lucide-react";
+import { Search, Star, Calendar, Loader2, Sparkles, UserCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
-const quickSubjects = ["Algebra", "AP Biology", "English Essay", "Python", "Calculus", "Chemistry"];
+const quickSubjects = ["Algebra", "AP Biology", "English Essay", "Python", "Calculus", "Chemistry", "JavaScript", "Physics"];
 
 const Matching = () => {
+  const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearch = async (s?: string) => {
     const query = s || subject;
@@ -27,26 +31,53 @@ const Matching = () => {
     }
   };
 
-  return (
-    <div className="container py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-1">Find a Tutor</h1>
-      <p className="text-muted-foreground mb-6">Our AI matches you with the best-fit tutors for your subject.</p>
+  // Debounced search
+  useEffect(() => {
+    if (!subject.trim() || subject.length < 2) return;
+    debounceRef.current = setTimeout(() => handleSearch(), 400);
+    return () => clearTimeout(debounceRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subject]);
 
-      {/* Search */}
+  const roleLabel = user?.role === "tutor" ? "Learner" : "Tutor";
+
+  return (
+    <div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Search className="h-6 w-6 text-primary" />
+          Find a {roleLabel}
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">Our AI matches you with the best-fit {roleLabel.toLowerCase()}s for your subject.</p>
+      </div>
+
+      {/* Search bar */}
       <div className="flex gap-3 mb-4">
-        <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Enter a subject (e.g., Algebra)" className="flex-1"
-          onKeyDown={e => e.key === "Enter" && handleSearch()} />
-        <Button onClick={() => handleSearch()} className="gap-2" disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-          Search
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={subject}
+            onChange={e => setSubject(e.target.value)}
+            placeholder="Search by subject (e.g., Algebra)"
+            className="pl-10"
+            onKeyDown={e => e.key === "Enter" && handleSearch()}
+          />
+        </div>
+        <Button onClick={() => handleSearch()} disabled={loading || !subject.trim()}>
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
         </Button>
       </div>
 
       {/* Quick tags */}
       <div className="flex flex-wrap gap-2 mb-8">
         {quickSubjects.map(s => (
-          <button key={s} onClick={() => handleSearch(s)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all active:scale-95 ${subject === s ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}>
+          <button
+            key={s}
+            onClick={() => { setSubject(s); handleSearch(s); }}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all active:scale-95 ${
+              subject === s ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted text-muted-foreground hover:bg-accent"
+            }`}
+          >
             {s}
           </button>
         ))}
@@ -54,52 +85,96 @@ const Matching = () => {
 
       {/* Results */}
       {loading && (
-        <div className="flex items-center justify-center py-16 gap-3">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <span className="text-muted-foreground">Finding best matches...</span>
         </div>
       )}
 
-      {!loading && searched && matches.length > 0 && (
-        <div className="space-y-4">
-          {matches.map(m => (
-            <div key={m.user.id} className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                      {m.user.name.split(" ").map(n => n[0]).join("")}
+      <AnimatePresence>
+        {!loading && searched && matches.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              {matches.length} match{matches.length !== 1 ? "es" : ""} found, ranked by relevance
+            </p>
+            {matches.map((m, i) => (
+              <motion.div
+                key={m.user.id}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex gap-3 flex-1 min-w-0">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
+                      {m.user.name.split(" ").map(n => n[0]).join("").slice(0, 2)}
                     </div>
-                    <div>
-                      <h3 className="font-bold">{m.user.name}</h3>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-500" />{m.user.rating}</span>
-                        <span>{m.user.sessionsCompleted} sessions</span>
+                    <div className="min-w-0">
+                      <h3 className="font-bold flex items-center gap-2">
+                        {m.user.name}
+                        {m.score >= 85 && (
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Top Match</span>
+                        )}
+                      </h3>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                        <span className="flex items-center gap-1"><Star className="h-3 w-3 text-amber-500" />{m.user.rating?.toFixed(1) || "—"}</span>
+                        <span><UserCheck className="h-3 w-3 inline" /> {m.user.sessionsCompleted} sessions</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2">{m.user.bio || "No bio available"}</p>
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {m.user.subjects.map(s => (
+                          <span key={s} className="text-[11px] px-2 py-0.5 rounded-full bg-accent text-accent-foreground font-medium">{s}</span>
+                        ))}
                       </div>
                     </div>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-2">{m.user.bio}</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {m.user.subjects.map(s => (
-                      <span key={s} className="text-xs px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{s}</span>
-                    ))}
+                  <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">{m.score}%</div>
+                      <div className="text-[10px] text-muted-foreground">match score</div>
+                    </div>
+                    {/* Score breakdown */}
+                    <div className="text-[10px] text-muted-foreground space-y-0.5">
+                      <div className="flex items-center gap-1">
+                        <div className="w-12 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-primary rounded-full" style={{ width: `${m.breakdown.subject}%` }} />
+                        </div>
+                        <span>Subject</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-12 h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full bg-primary/60 rounded-full" style={{ width: `${m.breakdown.availability}%` }} />
+                        </div>
+                        <span>Avail.</span>
+                      </div>
+                    </div>
+                    <Link to={`/schedule/${m.user.id}`}>
+                      <Button size="sm" className="gap-1.5 mt-1"><Calendar className="h-3.5 w-3.5" />Schedule</Button>
+                    </Link>
                   </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-2xl font-bold text-primary">{m.score}%</div>
-                  <div className="text-xs text-muted-foreground mb-3">match score</div>
-                  <Link to={`/schedule/${m.user.id}`}>
-                    <Button size="sm" className="gap-1.5"><Calendar className="h-3.5 w-3.5" />Schedule</Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </AnimatePresence>
+
+      {!loading && searched && matches.length === 0 && (
+        <div className="text-center py-20">
+          <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="font-medium text-muted-foreground">No {roleLabel.toLowerCase()}s found for "{subject}"</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Try a different subject or broaden your search.</p>
         </div>
       )}
 
-      {!loading && searched && matches.length === 0 && (
-        <p className="text-center text-muted-foreground py-16">No tutors found for "{subject}". Try a different subject.</p>
+      {!searched && (
+        <div className="text-center py-20">
+          <Sparkles className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="font-medium text-muted-foreground">Search a subject to find your perfect match</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">Or click one of the quick tags above</p>
+        </div>
       )}
     </div>
   );

@@ -1,98 +1,157 @@
-import { useState } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import Navbar from './Navbar';
+import { useState } from "react";
+import { Outlet, Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import AppNavbar from "@/components/app/AppNavbar";
+import Breadcrumbs from "@/components/Breadcrumbs";
+import {
+  LayoutDashboard, Calendar, Search, Clock, User, Settings,
+  ChevronLeft, ChevronRight, Menu, X,
+} from "lucide-react";
+
+const menuConfig = {
+  tutor: [
+    { name: "Dashboard", icon: LayoutDashboard, href: "/tutor/dashboard" },
+    { name: "My Sessions", icon: Calendar, href: "/sessions" },
+    { name: "Find Learners", icon: Search, href: "/matching" },
+    { name: "Availability", icon: Clock, href: "/availability" },
+    { name: "Profile", icon: User, href: "/profile" },
+    { name: "Settings", icon: Settings, href: "/settings" },
+  ],
+  learner: [
+    { name: "Dashboard", icon: LayoutDashboard, href: "/learner/dashboard" },
+    { name: "My Sessions", icon: Calendar, href: "/sessions" },
+    { name: "Find Tutors", icon: Search, href: "/matching" },
+    { name: "Profile", icon: User, href: "/profile" },
+    { name: "Settings", icon: Settings, href: "/settings" },
+  ],
+};
 
 export default function DashboardLayout() {
   const { user } = useAuth();
   const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  // Define menu items based on role
-  const menuItems = {
-    tutor: [
-      { name: 'Dashboard', icon: '📊', href: '/tutor/dashboard' },
-      { name: 'My Sessions', icon: '📅', href: '/sessions' },
-      { name: 'Find Learners', icon: '🔍', href: '/matching' },
-      { name: 'Availability', icon: '🕐', href: '/availability' },
-      { name: 'Profile', icon: '👤', href: '/profile' },
-      { name: 'Settings', icon: '⚙️', href: '/settings' },
-    ],
-    learner: [
-      { name: 'Dashboard', icon: '📊', href: '/learner/dashboard' },
-      { name: 'My Sessions', icon: '📅', href: '/sessions' },
-      { name: 'Find Tutors', icon: '🔍', href: '/matching' },
-      { name: 'Profile', icon: '👤', href: '/profile' },
-      { name: 'Settings', icon: '⚙️', href: '/settings' },
-    ],
-    admin: [
-      { name: 'Dashboard', icon: '📊', href: '/admin/dashboard' },
-      { name: 'Users', icon: '👥', href: '/admin/users' },
-      { name: 'Reports', icon: '🚩', href: '/admin/reports' },
-      { name: 'Flagged Reviews', icon: '⚠️', href: '/admin/flagged-reviews' },
-      { name: 'Settings', icon: '⚙️', href: '/settings' },
-    ],
-  };
-
-  const items = user ? menuItems[user.role] || [] : [];
+  const items = user ? menuConfig[user.role] || [] : [];
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Navbar />
-
-      {/* Sidebar (desktop) */}
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Sidebar – desktop */}
       <aside
-        className={`fixed inset-y-0 left-0 transform ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 transition duration-200 ease-in-out z-30 w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700 pt-16`}
+        className={`hidden md:flex flex-col border-r border-border bg-card transition-all duration-300 ${
+          collapsed ? "w-16" : "w-56"
+        }`}
       >
-        <div className="h-full overflow-y-auto py-4 px-3">
-          <ul className="space-y-2">
-            {items.map(item => (
-              <li key={item.href}>
-                <Link
-                  to={item.href}
-                  className={`flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 group ${
-                    location.pathname === item.href
-                      ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-gray-700 dark:text-gray-200'
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className="w-5 h-5 mr-3 text-lg">{item.icon}</span>
-                  <span>{item.name}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        {/* Logo area */}
+        <div className="flex items-center justify-between h-14 px-3 border-b border-border shrink-0">
+          {!collapsed && (
+            <span className="text-sm font-bold text-gradient truncate">EduBridge</span>
+          )}
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
         </div>
+
+        {/* Nav items */}
+        <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
+          {items.map(item => {
+            const active = location.pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                title={collapsed ? item.name : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <item.icon className="h-4.5 w-4.5 shrink-0" />
+                {!collapsed && <span className="truncate">{item.name}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User info */}
+        {user && !collapsed && (
+          <div className="p-3 border-t border-border">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                {user.name.charAt(0)}
+              </div>
+              <div className="truncate">
+                <p className="text-sm font-medium truncate">{user.name}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
 
-      {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
+      {/* Mobile sidebar overlay */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setMobileOpen(false)}>
+          <div className="absolute inset-0 bg-foreground/20 backdrop-blur-sm" />
+          <aside
+            className="absolute inset-y-0 left-0 w-64 bg-card border-r border-border flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between h-14 px-4 border-b border-border">
+              <span className="text-sm font-bold text-gradient">EduBridge</span>
+              <button onClick={() => setMobileOpen(false)} className="p-1.5 rounded-lg hover:bg-accent">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
+              {items.map(item => {
+                const active = location.pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      active
+                        ? "bg-primary/10 text-primary"
+                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon className="h-4.5 w-4.5 shrink-0" />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </aside>
+        </div>
       )}
 
       {/* Main content */}
-      <div className="flex-1 md:ml-64 overflow-y-auto pt-16">
-        {/* Top bar (mobile menu toggle) */}
-        <div className="sticky top-16 z-10 bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center md:hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top bar */}
+        <header className="sticky top-0 z-30 flex items-center h-14 px-4 md:px-6 border-b border-border bg-card/80 backdrop-blur-md shrink-0">
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-md focus:outline-none"
+            onClick={() => setMobileOpen(true)}
+            className="md:hidden p-2 -ml-2 rounded-lg hover:bg-accent mr-2"
           >
-            <span className="text-xl">☰</span>
+            <Menu className="h-5 w-5" />
           </button>
-          <h1 className="ml-4 text-xl font-semibold">Menu</h1>
-        </div>
+          <div className="flex-1" />
+          <AppNavbar />
+        </header>
 
         {/* Page content */}
-        <div className="p-4 md:p-6">
-          <Outlet />
-        </div>
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 md:p-6 max-w-6xl mx-auto">
+            <Breadcrumbs />
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   );
