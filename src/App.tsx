@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,7 +20,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import TutorDashboard from "./pages/TutorDashboard";
 import LearnerDashboard from "./pages/LearnerDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
+
 import Matching from "./pages/Matching";
 import Schedule from "./pages/Schedule";
 import SessionRoom from "./pages/SessionRoom";
@@ -28,9 +28,6 @@ import Sessions from "./pages/Sessions";
 import Availability from "./pages/Availability";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
-import UserManagement from "./pages/UserManagement";
-import Reports from "./pages/Reports";
-import FlaggedReviews from "./pages/FlaggedReviews";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,14 +74,10 @@ function AppRoutes() {
       <Route element={<DashboardLayout />}>
         <Route path="/tutor/dashboard" element={<PrivateRoute allowedRoles={['tutor']}><TutorDashboard /></PrivateRoute>} />
         <Route path="/learner/dashboard" element={<PrivateRoute allowedRoles={['learner']}><LearnerDashboard /></PrivateRoute>} />
-        <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
         <Route path="/matching" element={<PrivateRoute><Matching /></PrivateRoute>} />
         <Route path="/schedule/:tutorId" element={<PrivateRoute><Schedule /></PrivateRoute>} />
         <Route path="/availability" element={<PrivateRoute allowedRoles={['tutor']}><Availability /></PrivateRoute>} />
         <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
-        <Route path="/admin/users" element={<PrivateRoute allowedRoles={['admin']}><UserManagement /></PrivateRoute>} />
-        <Route path="/admin/reports" element={<PrivateRoute allowedRoles={['admin']}><Reports /></PrivateRoute>} />
-        <Route path="/admin/flagged-reviews" element={<PrivateRoute allowedRoles={['admin']}><FlaggedReviews /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}
