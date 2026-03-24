@@ -77,14 +77,10 @@ function AppRoutes() {
       <Route element={<DashboardLayout />}>
         <Route path="/tutor/dashboard" element={<PrivateRoute allowedRoles={['tutor']}><TutorDashboard /></PrivateRoute>} />
         <Route path="/learner/dashboard" element={<PrivateRoute allowedRoles={['learner']}><LearnerDashboard /></PrivateRoute>} />
-        <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><AdminDashboard /></PrivateRoute>} />
         <Route path="/matching" element={<PrivateRoute><Matching /></PrivateRoute>} />
         <Route path="/schedule/:tutorId" element={<PrivateRoute><Schedule /></PrivateRoute>} />
         <Route path="/availability" element={<PrivateRoute allowedRoles={['tutor']}><Availability /></PrivateRoute>} />
         <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
-        <Route path="/admin/users" element={<PrivateRoute allowedRoles={['admin']}><UserManagement /></PrivateRoute>} />
-        <Route path="/admin/reports" element={<PrivateRoute allowedRoles={['admin']}><Reports /></PrivateRoute>} />
-        <Route path="/admin/flagged-reviews" element={<PrivateRoute allowedRoles={['admin']}><FlaggedReviews /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}
