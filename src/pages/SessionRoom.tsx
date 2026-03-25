@@ -41,6 +41,8 @@ const SessionRoom = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState("");
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch session data
