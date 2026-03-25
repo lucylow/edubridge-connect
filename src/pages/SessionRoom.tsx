@@ -167,9 +167,15 @@ const SessionRoom = () => {
             {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
           </Button>
           {session?.status === "completed" && (
-            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowReview(true)}>
-              <Star className="h-3.5 w-3.5" />Review
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleGenerateSummary} disabled={generatingSummary}>
+                {generatingSummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
+                Summary
+              </Button>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowReview(true)}>
+                <Star className="h-3.5 w-3.5" />Review
+              </Button>
+            </>
           )}
         </div>
       </div>
