@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Video, Mic, MicOff, VideoOff, FileText, Send, Loader2, MonitorUp, Star, MessageSquare } from "lucide-react";
+import { Video, Mic, MicOff, VideoOff, FileText, Send, Loader2, MonitorUp, Star, MessageSquare, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
