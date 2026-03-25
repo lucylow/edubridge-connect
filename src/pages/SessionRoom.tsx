@@ -212,7 +212,14 @@ const SessionRoom = () => {
             )}
           </div>
 
-          {/* Review Modal */}
+          {/* AI Session Summary */}
+          {sessionSummary && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-5 border border-border">
+              <h3 className="font-bold text-sm flex items-center gap-2 mb-3"><ClipboardList className="h-4 w-4 text-primary" />Session Summary</h3>
+              <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted rounded-xl p-4 font-sans">{sessionSummary}</pre>
+            </motion.div>
+          )}
+
           <AnimatePresence>
             {showReview && (
               <motion.div
