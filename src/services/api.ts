@@ -199,3 +199,68 @@ export async function generateLessonPlan(subject: string): Promise<string> {
   if (error) throw new Error(error.message);
   return data.lessonPlan;
 }
+
+export async function generateStudyTips(subject: string, gradeLevel?: number, topic?: string): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("generate-study-tips", {
+    body: { subject, gradeLevel, topic },
+  });
+  if (error) throw new Error(error.message);
+  return data.tips;
+}
+
+export async function generateSessionSummary(params: {
+  sessionId: string;
+  subject?: string;
+  tutorName?: string;
+  learnerName?: string;
+  notes?: string;
+}): Promise<string> {
+  const { data, error } = await supabase.functions.invoke("generate-session-summary", {
+    body: params,
+  });
+  if (error) throw new Error(error.message);
+  return data.summary;
+}
+
+export interface SmartMatchResult {
+  overallScore: number;
+  subjectMatch: number;
+  gradeMatch: number;
+  strengths: string[];
+  challenges: string[];
+  recommendation: string;
+}
+
+export async function getSmartMatchScore(learnerProfile: Partial<User>, tutorProfile: Partial<User>): Promise<SmartMatchResult> {
+  const { data, error } = await supabase.functions.invoke("smart-match-scorer", {
+    body: { learnerProfile, tutorProfile },
+  });
+  if (error) throw new Error(error.message);
+  return data.match;
+}
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+}
+
+export interface Quiz {
+  title: string;
+  questions: QuizQuestion[];
+}
+
+export async function generateQuiz(params: {
+  subject: string;
+  topic?: string;
+  gradeLevel?: number;
+  numQuestions?: number;
+  difficulty?: "easy" | "medium" | "hard";
+}): Promise<Quiz> {
+  const { data, error } = await supabase.functions.invoke("generate-quiz", {
+    body: params,
+  });
+  if (error) throw new Error(error.message);
+  return data.quiz;
+}

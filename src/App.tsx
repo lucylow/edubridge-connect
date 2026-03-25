@@ -28,6 +28,7 @@ import Sessions from "./pages/Sessions";
 import Availability from "./pages/Availability";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Quiz from "./pages/Quiz";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ function AppRoutes() {
         <Route path="/schedule/:tutorId" element={<PrivateRoute><Schedule /></PrivateRoute>} />
         <Route path="/availability" element={<PrivateRoute allowedRoles={['tutor']}><Availability /></PrivateRoute>} />
         <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
+        <Route path="/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}

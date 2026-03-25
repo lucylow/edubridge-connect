@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions, type Session } from "@/services/api";
+import { getUserSessions, generateStudyTips, type Session } from "@/services/api";
 import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
-import { Search, Calendar, BookOpen, Video, TrendingUp } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const LearnerDashboard = () => {
   const { user } = useAuth();
@@ -19,7 +20,6 @@ const LearnerDashboard = () => {
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
 
-  // Realtime: auto-refresh when sessions change
   useRealtimeSessions(user?.id, fetchSessions);
 
   if (loading) return <Loader />;
@@ -97,8 +97,53 @@ const LearnerDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Study Tips & Quiz */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+        <StudyTipsCard subjects={user?.subjects || []} grade={user?.grade} />
+        <Link to="/quiz" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
+          <BrainCircuit className="h-8 w-8 text-primary" />
+          <span className="font-bold text-sm">Take a Practice Quiz</span>
+          <span className="text-xs text-muted-foreground">AI-generated quizzes on any subject</span>
+        </Link>
+      </div>
     </div>
   );
 };
+
+function StudyTipsCard({ subjects, grade }: { subjects: string[]; grade?: number }) {
+  const [tips, setTips] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleGenerate = async () => {
+    const subject = subjects[0] || "General";
+    setLoading(true);
+    try {
+      const result = await generateStudyTips(subject, grade);
+      setTips(result);
+    } catch {
+      toast.error("Failed to generate study tips");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-card rounded-2xl p-5 border border-border">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-sm flex items-center gap-2"><Lightbulb className="h-4 w-4 text-amber-500" />Study Tips</h3>
+        <Button size="sm" variant="secondary" onClick={handleGenerate} disabled={loading} className="gap-1.5">
+          {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Lightbulb className="h-3.5 w-3.5" />}
+          {loading ? "Loading..." : tips ? "Refresh" : "Get Tips"}
+        </Button>
+      </div>
+      {tips ? (
+        <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans bg-muted rounded-xl p-3 max-h-48 overflow-y-auto">{tips}</pre>
+      ) : (
+        <p className="text-sm text-muted-foreground">Get personalized AI study tips for your subjects.</p>
+      )}
+    </div>
+  );
+}
 
 export default LearnerDashboard;

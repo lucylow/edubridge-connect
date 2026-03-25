@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { generateLessonPlan } from "@/services/api";
+import { generateLessonPlan, generateSessionSummary } from "@/services/api";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Video, Mic, MicOff, VideoOff, FileText, Send, Loader2, MonitorUp, Star, MessageSquare } from "lucide-react";
+import { Video, Mic, MicOff, VideoOff, FileText, Send, Loader2, MonitorUp, Star, MessageSquare, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -41,6 +41,8 @@ const SessionRoom = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [sessionSummary, setSessionSummary] = useState("");
+  const [generatingSummary, setGeneratingSummary] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch session data
@@ -127,6 +129,25 @@ const SessionRoom = () => {
     }
   };
 
+  const handleGenerateSummary = async () => {
+    if (!session || !sessionId) return;
+    setGeneratingSummary(true);
+    try {
+      const summary = await generateSessionSummary({
+        sessionId,
+        subject: session.subject || undefined,
+        tutorName: (session.tutor as { name: string } | null)?.name,
+        learnerName: (session.learner as { name: string } | null)?.name,
+      });
+      setSessionSummary(summary);
+      toast.success("Session summary generated!");
+    } catch {
+      toast.error("Failed to generate summary");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
+
   const otherName = user?.id === session?.tutor_id
     ? (session?.learner as { name: string } | null)?.name || "Learner"
     : (session?.tutor as { name: string } | null)?.name || "Tutor";
@@ -146,9 +167,15 @@ const SessionRoom = () => {
             {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
           </Button>
           {session?.status === "completed" && (
-            <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowReview(true)}>
-              <Star className="h-3.5 w-3.5" />Review
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleGenerateSummary} disabled={generatingSummary}>
+                {generatingSummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ClipboardList className="h-3.5 w-3.5" />}
+                Summary
+              </Button>
+              <Button variant="secondary" size="sm" className="gap-1.5" onClick={() => setShowReview(true)}>
+                <Star className="h-3.5 w-3.5" />Review
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -185,7 +212,14 @@ const SessionRoom = () => {
             )}
           </div>
 
-          {/* Review Modal */}
+          {/* AI Session Summary */}
+          {sessionSummary && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-5 border border-border">
+              <h3 className="font-bold text-sm flex items-center gap-2 mb-3"><ClipboardList className="h-4 w-4 text-primary" />Session Summary</h3>
+              <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted rounded-xl p-4 font-sans">{sessionSummary}</pre>
+            </motion.div>
+          )}
+
           <AnimatePresence>
             {showReview && (
               <motion.div
