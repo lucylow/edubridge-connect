@@ -129,6 +129,25 @@ const SessionRoom = () => {
     }
   };
 
+  const handleGenerateSummary = async () => {
+    if (!session || !sessionId) return;
+    setGeneratingSummary(true);
+    try {
+      const summary = await generateSessionSummary({
+        sessionId,
+        subject: session.subject || undefined,
+        tutorName: (session.tutor as { name: string } | null)?.name,
+        learnerName: (session.learner as { name: string } | null)?.name,
+      });
+      setSessionSummary(summary);
+      toast.success("Session summary generated!");
+    } catch {
+      toast.error("Failed to generate summary");
+    } finally {
+      setGeneratingSummary(false);
+    }
+  };
+
   const otherName = user?.id === session?.tutor_id
     ? (session?.learner as { name: string } | null)?.name || "Learner"
     : (session?.tutor as { name: string } | null)?.name || "Tutor";
