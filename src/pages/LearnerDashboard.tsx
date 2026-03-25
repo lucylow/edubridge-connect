@@ -1,12 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { getUserSessions, type Session } from "@/services/api";
+import { getUserSessions, generateStudyTips, type Session } from "@/services/api";
 import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
-import { Search, Calendar, BookOpen, Video, TrendingUp } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 const LearnerDashboard = () => {
   const { user } = useAuth();
