@@ -2,17 +2,32 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Star, BookOpen, Save } from "lucide-react";
+import { User, Star, BookOpen, Save, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
   const { user } = useAuth();
   const [name, setName] = useState(user?.name || "");
   const [bio, setBio] = useState(user?.bio || "");
+  const [saving, setSaving] = useState(false);
 
-  const handleSave = () => {
-    toast.success("Profile updated successfully!");
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name, bio, updated_at: new Date().toISOString() })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      toast.success("Profile updated successfully!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save profile");
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (!user) return null;
@@ -61,7 +76,10 @@ const Profile = () => {
           </div>
         </div>
 
-        <Button onClick={handleSave} className="gap-2"><Save className="h-4 w-4" />Save Changes</Button>
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {saving ? "Saving..." : "Save Changes"}
+        </Button>
       </div>
     </div>
   );

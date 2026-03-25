@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, type Session } from "@/services/api";
+import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
@@ -12,9 +13,14 @@ const TutorDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchSessions = useCallback(() => {
     if (user) getUserSessions(user.id).then(setSessions).finally(() => setLoading(false));
   }, [user]);
+
+  useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+  // Realtime: auto-refresh when sessions change
+  useRealtimeSessions(user?.id, fetchSessions);
 
   if (loading) return <Loader />;
 
@@ -40,16 +46,9 @@ const TutorDashboard = () => {
         </Link>
       </div>
 
-      {/* Stats grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {stats.map((s, i) => (
-          <motion.div
-            key={s.label}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.08 }}
-            className="bg-card rounded-2xl p-4 border border-border"
-          >
+          <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-card rounded-2xl p-4 border border-border">
             <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
             <div className="text-2xl font-bold">{s.value}</div>
             <div className="text-xs text-muted-foreground">{s.label}</div>
@@ -57,7 +56,6 @@ const TutorDashboard = () => {
         ))}
       </div>
 
-      {/* Subjects */}
       <div className="bg-card rounded-2xl p-5 border border-border mb-6">
         <h2 className="font-bold text-base mb-3">Your Subjects</h2>
         <div className="flex flex-wrap gap-2">
@@ -70,13 +68,10 @@ const TutorDashboard = () => {
         </div>
       </div>
 
-      {/* Upcoming Sessions */}
       <div className="bg-card rounded-2xl p-5 border border-border">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-base">Upcoming Sessions</h2>
-          {sessions.length > 0 && (
-            <Link to="/sessions" className="text-xs text-primary font-medium hover:underline">View all</Link>
-          )}
+          {sessions.length > 0 && <Link to="/sessions" className="text-xs text-primary font-medium hover:underline">View all</Link>}
         </div>
         {upcoming.length === 0 ? (
           <div className="text-center py-10">
@@ -86,13 +81,7 @@ const TutorDashboard = () => {
         ) : (
           <div className="space-y-2">
             {upcoming.slice(0, 5).map((s, i) => (
-              <motion.div
-                key={s.id}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.06 }}
-                className="flex items-center justify-between bg-muted/50 rounded-xl p-3"
-              >
+              <motion.div key={s.id} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center justify-between bg-muted/50 rounded-xl p-3">
                 <div className="min-w-0">
                   <p className="font-medium text-sm truncate">{s.subject || "Session"} with {s.learnerName || "Learner"}</p>
                   <p className="text-xs text-muted-foreground">
