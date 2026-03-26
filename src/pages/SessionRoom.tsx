@@ -3,18 +3,18 @@ import { useParams } from "react-router-dom";
 import { generateLessonPlan, generateSessionSummary } from "@/services/api";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useSessionChat } from "@/hooks/useSessionChat";
+import { useAITutorChat } from "@/hooks/useAITutorChat";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Video, Mic, MicOff, VideoOff, FileText, Send, Loader2, MonitorUp, Star, MessageSquare, ClipboardList } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Video, Mic, MicOff, VideoOff, FileText, Send, Loader2,
+  MonitorUp, Star, MessageSquare, ClipboardList, Bot, Users
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface ChatMsg {
-  text: string;
-  fromMe: boolean;
-  time: string;
-}
 
 interface SessionData {
   id: string;
@@ -32,8 +32,8 @@ const SessionRoom = () => {
   const { user } = useAuth();
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
-  const [messages, setMessages] = useState<ChatMsg[]>([]);
-  const [input, setInput] = useState("");
+  const [chatInput, setChatInput] = useState("");
+  const [aiInput, setAiInput] = useState("");
   const [lessonPlan, setLessonPlan] = useState("");
   const [generating, setGenerating] = useState(false);
   const [session, setSession] = useState<SessionData | null>(null);
@@ -44,6 +44,16 @@ const SessionRoom = () => {
   const [sessionSummary, setSessionSummary] = useState("");
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const aiChatEndRef = useRef<HTMLDivElement>(null);
+
+  // Real-time chat
+  const { messages: chatMessages, sendMessage: sendChatMessage } = useSessionChat(sessionId);
+
+  // AI tutor chat
+  const { messages: aiMessages, isLoading: aiLoading, send: sendAiMessage } = useAITutorChat(
+    session?.subject || undefined,
+    user?.grade
+  );
 
   // Fetch session data
   useEffect(() => {
@@ -78,16 +88,19 @@ const SessionRoom = () => {
     return () => { supabase.removeChannel(channel); };
   }, [sessionId]);
 
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [chatMessages]);
+  useEffect(() => { aiChatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [aiMessages]);
 
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    const now = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    setMessages(prev => [...prev, { text: input, fromMe: true, time: now }]);
-    setInput("");
-    setTimeout(() => {
-      setMessages(prev => [...prev, { text: "Got it! Let me think about that...", fromMe: false, time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) }]);
-    }, 1200);
+  const handleSendChat = () => {
+    if (!chatInput.trim()) return;
+    sendChatMessage(chatInput);
+    setChatInput("");
+  };
+
+  const handleSendAi = () => {
+    if (!aiInput.trim() || aiLoading) return;
+    sendAiMessage(aiInput);
+    setAiInput("");
   };
 
   const handleGeneratePlan = async () => {
@@ -96,7 +109,6 @@ const SessionRoom = () => {
       const subject = session?.subject || "General";
       const plan = await generateLessonPlan(subject);
       setLessonPlan(plan);
-      // Save to database
       if (sessionId) {
         await supabase.from("sessions").update({ ai_lesson_plan: plan }).eq("id", sessionId);
         toast.success("Lesson plan generated & saved!");
@@ -152,6 +164,18 @@ const SessionRoom = () => {
     ? (session?.learner as { name: string } | null)?.name || "Learner"
     : (session?.tutor as { name: string } | null)?.name || "Tutor";
 
+  // Profiles lookup for sender names
+  const [profileNames, setProfileNames] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!session) return;
+    const ids = [session.tutor_id, session.learner_id];
+    supabase.from("profiles").select("user_id, name").in("user_id", ids).then(({ data }) => {
+      const map: Record<string, string> = {};
+      (data || []).forEach((p: any) => { map[p.user_id] = p.name; });
+      setProfileNames(map);
+    });
+  }, [session]);
+
   return (
     <div className="container py-6 max-w-6xl">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
@@ -181,7 +205,7 @@ const SessionRoom = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Video area */}
+        {/* Video + AI area */}
         <div className="lg:col-span-2 space-y-4">
           <div className="bg-foreground/5 rounded-2xl aspect-video flex items-center justify-center relative overflow-hidden">
             <div className="text-center">
@@ -208,11 +232,10 @@ const SessionRoom = () => {
             {lessonPlan ? (
               <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted rounded-xl p-4 font-sans">{lessonPlan}</pre>
             ) : (
-              <p className="text-sm text-muted-foreground">Click "Generate" to create an AI-powered lesson plan for this session.</p>
+              <p className="text-sm text-muted-foreground">Click "Generate" to create an AI-powered lesson plan.</p>
             )}
           </div>
 
-          {/* AI Session Summary */}
           {sessionSummary && (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-2xl p-5 border border-border">
               <h3 className="font-bold text-sm flex items-center gap-2 mb-3"><ClipboardList className="h-4 w-4 text-primary" />Session Summary</h3>
@@ -222,12 +245,7 @@ const SessionRoom = () => {
 
           <AnimatePresence>
             {showReview && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 12 }}
-                className="bg-card rounded-2xl p-5 border border-border"
-              >
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12 }} className="bg-card rounded-2xl p-5 border border-border">
                 <h3 className="font-bold text-sm flex items-center gap-2 mb-3">
                   <MessageSquare className="h-4 w-4 text-primary" />Leave a Review
                 </h3>
@@ -259,30 +277,86 @@ const SessionRoom = () => {
           </AnimatePresence>
         </div>
 
-        {/* Chat */}
-        <div className="bg-card rounded-2xl border border-border flex flex-col h-[500px] lg:h-auto">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-bold text-sm">Chat</h3>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center mt-8">Send a message to start chatting...</p>
-            )}
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.fromMe ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${msg.fromMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  <p>{msg.text}</p>
-                  <p className={`text-[10px] mt-1 ${msg.fromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>{msg.time}</p>
-                </div>
+        {/* Chat panel with tabs */}
+        <div className="bg-card rounded-2xl border border-border flex flex-col h-[540px] lg:h-auto">
+          <Tabs defaultValue="chat" className="flex flex-col h-full">
+            <TabsList className="mx-3 mt-3 grid grid-cols-2">
+              <TabsTrigger value="chat" className="gap-1.5 text-xs">
+                <Users className="h-3.5 w-3.5" />Chat
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="gap-1.5 text-xs">
+                <Bot className="h-3.5 w-3.5" />AI Tutor
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Peer Chat */}
+            <TabsContent value="chat" className="flex-1 flex flex-col overflow-hidden m-0">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatMessages.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center mt-8">Send a message to start chatting...</p>
+                )}
+                {chatMessages.map((msg) => {
+                  const fromMe = msg.sender_id === user?.id;
+                  return (
+                    <div key={msg.id} className={`flex ${fromMe ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[80%] px-3 py-2 rounded-2xl text-sm ${fromMe ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                        {!fromMe && (
+                          <p className="text-[10px] font-semibold mb-0.5 opacity-70">{profileNames[msg.sender_id] || "User"}</p>
+                        )}
+                        <p>{msg.content}</p>
+                        <p className={`text-[10px] mt-1 ${fromMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+                <div ref={chatEndRef} />
               </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-          <div className="p-3 border-t border-border flex gap-2">
-            <Input value={input} onChange={e => setInput(e.target.value)} placeholder="Type a message..."
-              onKeyDown={e => e.key === "Enter" && sendMessage()} className="flex-1" />
-            <Button size="icon" onClick={sendMessage}><Send className="h-4 w-4" /></Button>
-          </div>
+              <div className="p-3 border-t border-border flex gap-2">
+                <Input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Type a message..."
+                  onKeyDown={e => e.key === "Enter" && handleSendChat()} className="flex-1" />
+                <Button size="icon" onClick={handleSendChat}><Send className="h-4 w-4" /></Button>
+              </div>
+            </TabsContent>
+
+            {/* AI Tutor Chat */}
+            <TabsContent value="ai" className="flex-1 flex flex-col overflow-hidden m-0">
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {aiMessages.length === 0 && (
+                  <div className="text-center mt-8 space-y-2">
+                    <Bot className="h-8 w-8 text-primary/40 mx-auto" />
+                    <p className="text-xs text-muted-foreground">Ask the AI tutor anything about {session?.subject || "your subject"}!</p>
+                  </div>
+                )}
+                {aiMessages.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[85%] px-3 py-2 rounded-2xl text-sm ${msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-accent/50 border border-border"}`}>
+                      {msg.role === "assistant" && (
+                        <p className="text-[10px] font-semibold mb-0.5 text-primary flex items-center gap-1"><Bot className="h-3 w-3" />AI Tutor</p>
+                      )}
+                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))}
+                {aiLoading && aiMessages[aiMessages.length - 1]?.role !== "assistant" && (
+                  <div className="flex justify-start">
+                    <div className="bg-accent/50 border border-border px-3 py-2 rounded-2xl">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  </div>
+                )}
+                <div ref={aiChatEndRef} />
+              </div>
+              <div className="p-3 border-t border-border flex gap-2">
+                <Input value={aiInput} onChange={e => setAiInput(e.target.value)} placeholder="Ask the AI tutor..."
+                  onKeyDown={e => e.key === "Enter" && handleSendAi()} className="flex-1" disabled={aiLoading} />
+                <Button size="icon" onClick={handleSendAi} disabled={aiLoading}>
+                  {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

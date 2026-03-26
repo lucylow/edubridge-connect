@@ -9,9 +9,22 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { subject, topic } = await req.json();
+    const { messages, subject, gradeLevel } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const systemPrompt = `You are EduBridge AI Tutor, a friendly and encouraging educational assistant for K-12 students. 
+${subject ? `The current subject is "${subject}".` : ""}
+${gradeLevel ? `The student is in grade ${gradeLevel}.` : ""}
+
+Guidelines:
+- Be patient, supportive, and use age-appropriate language
+- Break down complex concepts into simple steps
+- Use examples and analogies students can relate to
+- Encourage critical thinking rather than just giving answers
+- If a student is struggling, try a different explanation approach
+- Use emojis sparingly to keep things friendly
+- Keep responses concise (under 300 words unless explaining a complex concept)`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -22,42 +35,36 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          {
-            role: "system",
-            content: "You are an expert educational tutor. Generate concise, structured lesson plans for K-12 and college students. Use emojis sparingly. Keep plans actionable and under 500 words.",
-          },
-          {
-            role: "user",
-            content: `Generate a lesson plan for the subject "${subject}"${topic ? ` on the topic "${topic}"` : ""}. Include: 1) Learning objectives, 2) Warm-up activity (5 min), 3) Core lesson with examples (20 min), 4) Practice problems (15 min), 5) Wrap-up and homework (5 min).`,
-          },
+          { role: "system", content: systemPrompt },
+          ...messages,
         ],
+        stream: true,
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded, please try again later." }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please wait a moment and try again." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds to continue using AI features." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      return new Response(JSON.stringify({ error: "AI service temporarily unavailable." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const data = await response.json();
-    const lessonPlan = data.choices?.[0]?.message?.content || "Could not generate lesson plan.";
-
-    return new Response(JSON.stringify({ lessonPlan }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(response.body, {
+      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
-    console.error("generate-lesson-plan error:", e);
+    console.error("ai-tutor-chat error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
