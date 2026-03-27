@@ -17,11 +17,14 @@ export function useAITutorChat(subject?: string, gradeLevel?: number) {
       setIsLoading(true);
 
       try {
+        const { data: { session: authSession } } = await import("@/integrations/supabase/client").then(m => m.supabase.auth.getSession());
+        const token = authSession?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
         const resp = await fetch(CHAT_URL, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ messages: updatedMessages, subject, gradeLevel }),
         });
