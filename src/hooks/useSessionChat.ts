@@ -8,7 +8,6 @@ export interface ChatMessage {
   sender_id: string;
   content: string;
   created_at: string;
-  sender_name?: string;
 }
 
 export function useSessionChat(sessionId: string | undefined) {
@@ -21,11 +20,11 @@ export function useSessionChat(sessionId: string | undefined) {
     if (!sessionId) return;
     setLoading(true);
     supabase
-      .from("messages" as any)
+      .from("messages")
       .select("*")
       .eq("session_id", sessionId)
       .order("created_at", { ascending: true })
-      .then(({ data }: any) => {
+      .then(({ data }) => {
         setMessages(data || []);
         setLoading(false);
       });
@@ -44,7 +43,7 @@ export function useSessionChat(sessionId: string | undefined) {
           table: "messages",
           filter: `session_id=eq.${sessionId}`,
         },
-        (payload: any) => {
+        (payload) => {
           const newMsg = payload.new as ChatMessage;
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
@@ -62,11 +61,12 @@ export function useSessionChat(sessionId: string | undefined) {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!sessionId || !user || !content.trim()) return;
-      await (supabase.from("messages" as any) as any).insert({
+      const { error } = await supabase.from("messages").insert({
         session_id: sessionId,
         sender_id: user.id,
         content: content.trim(),
       });
+      if (error) console.error("Failed to send message:", error.message);
     },
     [sessionId, user]
   );
