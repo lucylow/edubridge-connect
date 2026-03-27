@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      availability_slots: {
+        Row: {
+          created_at: string
+          end_time: string
+          id: string
+          is_booked: boolean
+          start_time: string
+          tutor_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          id?: string
+          is_booked?: boolean
+          start_time: string
+          tutor_id: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_booked?: boolean
+          start_time?: string
+          tutor_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
