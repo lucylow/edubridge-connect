@@ -29,6 +29,7 @@ import Availability from "./pages/Availability";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Quiz from "./pages/Quiz";
+import AIAssistant from "./pages/AIAssistant";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
