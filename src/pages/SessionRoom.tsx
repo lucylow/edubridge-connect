@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useSessionChat } from "@/hooks/useSessionChat";
 import { useAITutorChat } from "@/hooks/useAITutorChat";
+import MarkdownContent from "@/components/MarkdownContent";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
