@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { getMatches, type MatchResult } from "@/services/api";
+import { getMatches, getSmartMatchScore, type MatchResult, type SmartMatchResult } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Calendar, Loader2, Sparkles, UserCheck } from "lucide-react";
+import { Search, Star, Calendar, Loader2, Sparkles, UserCheck, Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-
-const quickSubjects = ["Algebra", "AP Biology", "English Essay", "Python", "Calculus", "Chemistry", "JavaScript", "Physics"];
+import { toast } from "sonner";
 
 const Matching = () => {
   const { user } = useAuth();
