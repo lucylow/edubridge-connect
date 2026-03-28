@@ -144,7 +144,9 @@ function StudyTipsCard({ subjects, grade }: { subjects: string[]; grade?: number
         </Button>
       </div>
       {tips ? (
-        <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans bg-muted rounded-xl p-3 max-h-48 overflow-y-auto">{tips}</pre>
+        <div className="bg-muted rounded-xl p-3 max-h-48 overflow-y-auto">
+          <MarkdownContent content={tips} />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">Get personalized AI study tips for your subjects.</p>
       )}
