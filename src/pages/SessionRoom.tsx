@@ -336,7 +336,7 @@ const SessionRoom = () => {
                       {msg.role === "assistant" && (
                         <p className="text-[10px] font-semibold mb-0.5 text-primary flex items-center gap-1"><Bot className="h-3 w-3" />AI Tutor</p>
                       )}
-                      <p className="whitespace-pre-wrap">{msg.content}</p>
+                      <MarkdownContent content={msg.content} />
                     </div>
                   </div>
                 ))}
