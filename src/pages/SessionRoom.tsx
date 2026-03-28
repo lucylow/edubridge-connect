@@ -231,7 +231,7 @@ const SessionRoom = () => {
               </Button>
             </div>
             {lessonPlan ? (
-              <pre className="text-sm text-muted-foreground whitespace-pre-wrap bg-muted rounded-xl p-4 font-sans">{lessonPlan}</pre>
+              <div className="bg-muted rounded-xl p-4"><MarkdownContent content={lessonPlan} /></div>
             ) : (
               <p className="text-sm text-muted-foreground">Click "Generate" to create an AI-powered lesson plan.</p>
             )}
