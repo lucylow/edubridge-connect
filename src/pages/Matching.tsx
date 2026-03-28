@@ -8,12 +8,17 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 
+const quickSubjects = ["Algebra", "AP Biology", "English Essay", "Python", "Calculus", "Chemistry", "JavaScript", "Physics"];
+
 const Matching = () => {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
+  const [smartScores, setSmartScores] = useState<Record<string, SmartMatchResult>>({});
+  const [scoringId, setScoringId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearch = async (s?: string) => {
