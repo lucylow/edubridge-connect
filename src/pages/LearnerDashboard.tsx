@@ -5,7 +5,8 @@ import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit } from "lucide-react";
+import MarkdownContent from "@/components/MarkdownContent";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -99,12 +100,17 @@ const LearnerDashboard = () => {
       </div>
 
       {/* Study Tips & Quiz */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
         <StudyTipsCard subjects={user?.subjects || []} grade={user?.grade} />
         <Link to="/quiz" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
           <BrainCircuit className="h-8 w-8 text-primary" />
-          <span className="font-bold text-sm">Take a Practice Quiz</span>
-          <span className="text-xs text-muted-foreground">AI-generated quizzes on any subject</span>
+          <span className="font-bold text-sm">Practice Quiz</span>
+          <span className="text-xs text-muted-foreground">AI-generated quizzes</span>
+        </Link>
+        <Link to="/ai-assistant" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
+          <Bot className="h-8 w-8 text-primary" />
+          <span className="font-bold text-sm">AI Assistant</span>
+          <span className="text-xs text-muted-foreground">Chat, tips & lesson plans</span>
         </Link>
       </div>
     </div>
@@ -138,7 +144,9 @@ function StudyTipsCard({ subjects, grade }: { subjects: string[]; grade?: number
         </Button>
       </div>
       {tips ? (
-        <pre className="text-sm text-muted-foreground whitespace-pre-wrap font-sans bg-muted rounded-xl p-3 max-h-48 overflow-y-auto">{tips}</pre>
+        <div className="bg-muted rounded-xl p-3 max-h-48 overflow-y-auto">
+          <MarkdownContent content={tips} />
+        </div>
       ) : (
         <p className="text-sm text-muted-foreground">Get personalized AI study tips for your subjects.</p>
       )}

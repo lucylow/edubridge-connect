@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { getMatches, type MatchResult } from "@/services/api";
+import { getMatches, getSmartMatchScore, type MatchResult, type SmartMatchResult } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Star, Calendar, Loader2, Sparkles, UserCheck } from "lucide-react";
+import { Search, Star, Calendar, Loader2, Sparkles, UserCheck, Bot, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
 
 const quickSubjects = ["Algebra", "AP Biology", "English Essay", "Python", "Calculus", "Chemistry", "JavaScript", "Physics"];
 
@@ -15,6 +16,9 @@ const Matching = () => {
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
+  const [smartScores, setSmartScores] = useState<Record<string, SmartMatchResult>>({});
+  const [scoringId, setScoringId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const handleSearch = async (s?: string) => {
@@ -28,6 +32,26 @@ const Matching = () => {
       setMatches(results);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGetSmartScore = async (tutorUser: MatchResult["user"]) => {
+    if (!user || smartScores[tutorUser.id]) {
+      setExpandedMatch(expandedMatch === tutorUser.id ? null : tutorUser.id);
+      return;
+    }
+    setScoringId(tutorUser.id);
+    setExpandedMatch(tutorUser.id);
+    try {
+      const result = await getSmartMatchScore(
+        { name: user.name, subjects: user.subjects, grade: user.grade },
+        { name: tutorUser.name, subjects: tutorUser.subjects, rating: tutorUser.rating }
+      );
+      setSmartScores(prev => ({ ...prev, [tutorUser.id]: result }));
+    } catch {
+      toast.error("Failed to get AI match analysis");
+    } finally {
+      setScoringId(null);
     }
   };
 
@@ -150,11 +174,67 @@ const Matching = () => {
                         <span>Avail.</span>
                       </div>
                     </div>
-                    <Link to={`/schedule/${m.user.id}`}>
-                      <Button size="sm" className="gap-1.5 mt-1"><Calendar className="h-3.5 w-3.5" />Schedule</Button>
-                    </Link>
+                    <div className="flex gap-1.5">
+                      <Button size="sm" variant="ghost" onClick={() => handleGetSmartScore(m.user)} className="gap-1 text-xs">
+                        {scoringId === m.user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bot className="h-3 w-3" />}
+                        AI Analysis
+                        {expandedMatch === m.user.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </Button>
+                      <Link to={`/schedule/${m.user.id}`}>
+                        <Button size="sm" className="gap-1.5"><Calendar className="h-3.5 w-3.5" />Schedule</Button>
+                      </Link>
+                    </div>
                   </div>
                 </div>
+
+                {/* AI Smart Match Expanded */}
+                <AnimatePresence>
+                  {expandedMatch === m.user.id && smartScores[m.user.id] && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-xs font-semibold text-primary flex items-center gap-1 mb-2">
+                          <Bot className="h-3.5 w-3.5" />AI Compatibility Analysis
+                        </p>
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="bg-muted rounded-xl p-2 text-center">
+                            <div className="text-lg font-bold text-primary">{smartScores[m.user.id].overallScore}%</div>
+                            <div className="text-[10px] text-muted-foreground">Overall</div>
+                          </div>
+                          <div className="bg-muted rounded-xl p-2 text-center">
+                            <div className="text-lg font-bold text-primary">{smartScores[m.user.id].subjectMatch}%</div>
+                            <div className="text-[10px] text-muted-foreground">Subject</div>
+                          </div>
+                          <div className="bg-muted rounded-xl p-2 text-center">
+                            <div className="text-lg font-bold text-primary">{smartScores[m.user.id].gradeMatch}%</div>
+                            <div className="text-[10px] text-muted-foreground">Grade</div>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className="font-semibold text-emerald-600 mb-1">✅ Strengths</p>
+                            <ul className="space-y-0.5 text-muted-foreground">
+                              {smartScores[m.user.id].strengths.map((s, i) => <li key={i}>• {s}</li>)}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="font-semibold text-amber-600 mb-1">⚠️ Challenges</p>
+                            <ul className="space-y-0.5 text-muted-foreground">
+                              {smartScores[m.user.id].challenges.map((c, i) => <li key={i}>• {c}</li>)}
+                            </ul>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2 bg-muted rounded-lg p-2 italic">
+                          💡 {smartScores[m.user.id].recommendation}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
