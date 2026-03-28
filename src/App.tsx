@@ -81,6 +81,7 @@ function AppRoutes() {
         <Route path="/availability" element={<PrivateRoute allowedRoles={['tutor']}><Availability /></PrivateRoute>} />
         <Route path="/sessions" element={<PrivateRoute><Sessions /></PrivateRoute>} />
         <Route path="/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
+        <Route path="/ai-assistant" element={<PrivateRoute><AIAssistant /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}
