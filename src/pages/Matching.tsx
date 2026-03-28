@@ -35,6 +35,26 @@ const Matching = () => {
     }
   };
 
+  const handleGetSmartScore = async (tutorUser: MatchResult["user"]) => {
+    if (!user || smartScores[tutorUser.id]) {
+      setExpandedMatch(expandedMatch === tutorUser.id ? null : tutorUser.id);
+      return;
+    }
+    setScoringId(tutorUser.id);
+    setExpandedMatch(tutorUser.id);
+    try {
+      const result = await getSmartMatchScore(
+        { name: user.name, subjects: user.subjects, grade: user.grade },
+        { name: tutorUser.name, subjects: tutorUser.subjects, rating: tutorUser.rating }
+      );
+      setSmartScores(prev => ({ ...prev, [tutorUser.id]: result }));
+    } catch {
+      toast.error("Failed to get AI match analysis");
+    } finally {
+      setScoringId(null);
+    }
+  };
+
   // Debounced search
   useEffect(() => {
     if (!subject.trim() || subject.length < 2) return;
