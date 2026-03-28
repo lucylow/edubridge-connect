@@ -5,7 +5,8 @@ import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit } from "lucide-react";
+import MarkdownContent from "@/components/MarkdownContent";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
