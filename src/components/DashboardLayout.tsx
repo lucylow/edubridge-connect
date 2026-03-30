@@ -5,7 +5,7 @@ import AppNavbar from "@/components/app/AppNavbar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import {
   LayoutDashboard, Calendar, Search, Clock, User, Settings,
-  ChevronLeft, ChevronRight, Menu, X, BrainCircuit, Bot,
+  ChevronLeft, ChevronRight, Menu, X, BrainCircuit, Bot, Layers,
 } from "lucide-react";
 
 const menuConfig = {
