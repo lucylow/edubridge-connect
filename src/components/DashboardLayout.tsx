@@ -5,7 +5,7 @@ import AppNavbar from "@/components/app/AppNavbar";
 import Breadcrumbs from "@/components/Breadcrumbs";
 import {
   LayoutDashboard, Calendar, Search, Clock, User, Settings,
-  ChevronLeft, ChevronRight, Menu, X, BrainCircuit, Bot,
+  ChevronLeft, ChevronRight, Menu, X, BrainCircuit, Bot, Layers,
 } from "lucide-react";
 
 const menuConfig = {
@@ -16,6 +16,7 @@ const menuConfig = {
     { name: "Availability", icon: Clock, href: "/availability" },
     { name: "AI Assistant", icon: Bot, href: "/ai-assistant" },
     { name: "Quiz", icon: BrainCircuit, href: "/quiz" },
+    { name: "Flashcards", icon: Layers, href: "/flashcards" },
     { name: "Profile", icon: User, href: "/profile" },
     { name: "Settings", icon: Settings, href: "/settings" },
   ],
@@ -25,6 +26,7 @@ const menuConfig = {
     { name: "Find Tutors", icon: Search, href: "/matching" },
     { name: "AI Assistant", icon: Bot, href: "/ai-assistant" },
     { name: "Quiz", icon: BrainCircuit, href: "/quiz" },
+    { name: "Flashcards", icon: Layers, href: "/flashcards" },
     { name: "Profile", icon: User, href: "/profile" },
     { name: "Settings", icon: Settings, href: "/settings" },
   ],
