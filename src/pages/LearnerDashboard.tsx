@@ -31,10 +31,13 @@ const LearnerDashboard = () => {
   const upcoming = sessions.filter(s => s.status === "scheduled");
   const completed = sessions.filter(s => s.status === "completed");
 
-  const stats = [
+  const xp = stats ? xpProgress(stats.xp, stats.level) : null;
+
+  const statCards = [
     { icon: BookOpen, label: "Sessions completed", value: completed.length, color: "text-emerald-500" },
     { icon: Calendar, label: "Upcoming", value: upcoming.length, color: "text-primary" },
-    { icon: TrendingUp, label: "Subjects", value: user?.subjects.length || 0, color: "text-amber-500" },
+    { icon: Star, label: "Level", value: stats?.level || 1, color: "text-amber-500" },
+    { icon: Flame, label: "Streak", value: `${stats?.streak_days || 0}d`, color: "text-orange-500" },
   ];
 
   return (
