@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, generateStudyTips, type Session } from "@/services/api";
 import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
+import { useGamification, xpProgress } from "@/hooks/useGamification";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import Loader from "@/components/app/Loader";
 import MarkdownContent from "@/components/MarkdownContent";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers, Trophy, Flame, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
