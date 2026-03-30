@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Loader from "@/components/app/Loader";
 import MarkdownContent from "@/components/MarkdownContent";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
