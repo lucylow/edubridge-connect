@@ -43,13 +43,17 @@ const Quiz = () => {
     setAnswers(prev => ({ ...prev, [qIndex]: optIndex }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!quiz) return;
     if (Object.keys(answers).length < quiz.questions.length) {
       toast.error("Please answer all questions before submitting.");
       return;
     }
     setSubmitted(true);
+    const sc = quiz.questions.reduce((acc, q, i) => acc + (answers[i] === q.correctIndex ? 1 : 0), 0);
+    const perfect = sc === quiz.questions.length;
+    await recordQuiz(perfect);
+    toast.success(`+25 XP earned! ${perfect ? "🎉 Perfect score bonus!" : ""}`);
   };
 
   const score = quiz

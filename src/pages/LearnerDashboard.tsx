@@ -52,8 +52,24 @@ const LearnerDashboard = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        {stats.map((s, i) => (
+      {/* XP Bar */}
+      {xp && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="bg-card rounded-2xl p-4 border border-border mb-6">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-semibold flex items-center gap-1.5"><Trophy className="h-4 w-4 text-primary" />Level {stats?.level}</span>
+            <span className="text-xs text-muted-foreground">{xp.current}/{xp.needed} XP</span>
+          </div>
+          <Progress value={xp.percent} className="h-2" />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-muted-foreground">{xp.needed - xp.current} XP to next level</span>
+            <Link to="/progress" className="text-[10px] text-primary font-medium hover:underline">View all progress →</Link>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        {statCards.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-card rounded-2xl p-4 border border-border">
             <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
             <div className="text-2xl font-bold">{s.value}</div>
