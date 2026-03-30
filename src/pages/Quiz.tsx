@@ -19,6 +19,7 @@ const Quiz = () => {
   const [loading, setLoading] = useState(false);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [submitted, setSubmitted] = useState(false);
+  const { recordQuiz } = useGamification();
 
   const handleGenerate = async () => {
     if (!subject.trim()) return;
