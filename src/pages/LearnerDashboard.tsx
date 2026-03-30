@@ -2,11 +2,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, generateStudyTips, type Session } from "@/services/api";
 import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
+import { useGamification, xpProgress } from "@/hooks/useGamification";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import Loader from "@/components/app/Loader";
 import MarkdownContent from "@/components/MarkdownContent";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers, Trophy, Flame, Star } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -14,6 +16,7 @@ const LearnerDashboard = () => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const { stats } = useGamification();
 
   const fetchSessions = useCallback(() => {
     if (user) getUserSessions(user.id).then(setSessions).finally(() => setLoading(false));
@@ -28,10 +31,13 @@ const LearnerDashboard = () => {
   const upcoming = sessions.filter(s => s.status === "scheduled");
   const completed = sessions.filter(s => s.status === "completed");
 
-  const stats = [
+  const xp = stats ? xpProgress(stats.xp, stats.level) : null;
+
+  const statCards = [
     { icon: BookOpen, label: "Sessions completed", value: completed.length, color: "text-emerald-500" },
     { icon: Calendar, label: "Upcoming", value: upcoming.length, color: "text-primary" },
-    { icon: TrendingUp, label: "Subjects", value: user?.subjects.length || 0, color: "text-amber-500" },
+    { icon: Star, label: "Level", value: stats?.level || 1, color: "text-amber-500" },
+    { icon: Flame, label: "Streak", value: `${stats?.streak_days || 0}d`, color: "text-orange-500" },
   ];
 
   return (
@@ -46,8 +52,24 @@ const LearnerDashboard = () => {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-8">
-        {stats.map((s, i) => (
+      {/* XP Bar */}
+      {xp && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          className="bg-card rounded-2xl p-4 border border-border mb-6">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-sm font-semibold flex items-center gap-1.5"><Trophy className="h-4 w-4 text-primary" />Level {stats?.level}</span>
+            <span className="text-xs text-muted-foreground">{xp.current}/{xp.needed} XP</span>
+          </div>
+          <Progress value={xp.percent} className="h-2" />
+          <div className="flex justify-between mt-1">
+            <span className="text-[10px] text-muted-foreground">{xp.needed - xp.current} XP to next level</span>
+            <Link to="/progress" className="text-[10px] text-primary font-medium hover:underline">View all progress →</Link>
+          </div>
+        </motion.div>
+      )}
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        {statCards.map((s, i) => (
           <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-card rounded-2xl p-4 border border-border">
             <s.icon className={`h-5 w-5 ${s.color} mb-2`} />
             <div className="text-2xl font-bold">{s.value}</div>

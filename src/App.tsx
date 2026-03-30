@@ -31,6 +31,7 @@ import Settings from "./pages/Settings";
 import Quiz from "./pages/Quiz";
 import AIAssistant from "./pages/AIAssistant";
 import Flashcards from "./pages/Flashcards";
+import Progress from "./pages/Progress";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ function AppRoutes() {
         <Route path="/quiz" element={<PrivateRoute><Quiz /></PrivateRoute>} />
         <Route path="/ai-assistant" element={<PrivateRoute><AIAssistant /></PrivateRoute>} />
         <Route path="/flashcards" element={<PrivateRoute><Flashcards /></PrivateRoute>} />
+        <Route path="/progress" element={<PrivateRoute><Progress /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}
