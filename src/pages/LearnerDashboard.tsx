@@ -100,12 +100,17 @@ const LearnerDashboard = () => {
       </div>
 
       {/* Study Tips & Quiz */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
         <StudyTipsCard subjects={user?.subjects || []} grade={user?.grade} />
         <Link to="/quiz" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
           <BrainCircuit className="h-8 w-8 text-primary" />
           <span className="font-bold text-sm">Practice Quiz</span>
           <span className="text-xs text-muted-foreground">AI-generated quizzes</span>
+        </Link>
+        <Link to="/flashcards" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
+          <Layers className="h-8 w-8 text-primary" />
+          <span className="font-bold text-sm">Flashcards</span>
+          <span className="text-xs text-muted-foreground">Spaced repetition study</span>
         </Link>
         <Link to="/ai-assistant" className="bg-card rounded-2xl p-5 border border-border hover:border-primary/30 transition-all flex flex-col items-center justify-center gap-2 text-center min-h-[120px]">
           <Bot className="h-8 w-8 text-primary" />
