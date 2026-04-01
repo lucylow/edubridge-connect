@@ -167,6 +167,7 @@ export function useGamification() {
 
     if (!error) {
       setEarnedKeys(prev => new Set([...prev, key]));
+      showAchievementToast(achievement.title, achievement.description, achievement.icon, achievement.xp_reward);
       if (achievement.xp_reward > 0) await addXP(achievement.xp_reward);
       return true;
     }
