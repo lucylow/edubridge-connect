@@ -18,6 +18,7 @@ const LearnerDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const { stats } = useGamification();
+  const { challenges, completedIds, completeChallenge } = useDailyChallenges();
 
   const fetchSessions = useCallback(() => {
     if (user) getUserSessions(user.id).then(setSessions).finally(() => setLoading(false));
