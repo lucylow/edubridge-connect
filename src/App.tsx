@@ -32,6 +32,7 @@ import Quiz from "./pages/Quiz";
 import AIAssistant from "./pages/AIAssistant";
 import Flashcards from "./pages/Flashcards";
 import Progress from "./pages/Progress";
+import DailyChallenges from "./pages/DailyChallenges";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
