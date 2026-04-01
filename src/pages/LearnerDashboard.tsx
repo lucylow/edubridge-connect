@@ -3,12 +3,13 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserSessions, generateStudyTips, type Session } from "@/services/api";
 import { useRealtimeSessions } from "@/hooks/useRealtimeSessions";
 import { useGamification, xpProgress } from "@/hooks/useGamification";
+import { useDailyChallenges } from "@/hooks/useDailyChallenges";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Loader from "@/components/app/Loader";
 import MarkdownContent from "@/components/MarkdownContent";
-import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers, Trophy, Flame, Star } from "lucide-react";
+import { Search, Calendar, BookOpen, Video, TrendingUp, Lightbulb, Loader2, BrainCircuit, Bot, Layers, Trophy, Flame, Star, Target, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 
@@ -17,6 +18,7 @@ const LearnerDashboard = () => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const { stats } = useGamification();
+  const { challenges, completedIds, completeChallenge } = useDailyChallenges();
 
   const fetchSessions = useCallback(() => {
     if (user) getUserSessions(user.id).then(setSessions).finally(() => setLoading(false));
@@ -120,6 +122,41 @@ const LearnerDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* Daily Challenges Widget */}
+      {challenges.length > 0 && (
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="bg-card rounded-2xl p-5 border border-border mt-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-base flex items-center gap-2">
+              <Target className="h-4.5 w-4.5 text-primary" /> Today's Challenges
+            </h2>
+            <Link to="/daily-challenges" className="text-xs text-primary font-medium hover:underline">View all →</Link>
+          </div>
+          <div className="space-y-2">
+            {challenges.map((c, i) => {
+              const done = completedIds.has(c.id);
+              return (
+                <motion.div key={c.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 + i * 0.06 }}
+                  className={`flex items-center gap-3 rounded-xl p-3 transition-all ${done ? "bg-primary/5" : "bg-muted/50"}`}>
+                  {done ? (
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                  ) : (
+                    <Target className="h-5 w-5 text-muted-foreground shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <span className={`text-sm font-medium ${done ? "line-through text-muted-foreground" : ""}`}>{c.title}</span>
+                    <span className="text-xs text-primary font-semibold ml-2">+{c.xp_reward} XP</span>
+                  </div>
+                  <Button size="sm" variant={done ? "outline" : "default"} disabled={done} onClick={() => completeChallenge(c.id)} className="shrink-0 text-xs h-7 px-3">
+                    {done ? "Done" : "Complete"}
+                  </Button>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
 
       {/* Study Tips & Quiz */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-6">
