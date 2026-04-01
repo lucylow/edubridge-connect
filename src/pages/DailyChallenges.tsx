@@ -18,7 +18,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export default function DailyChallenges() {
-  const { challenges, completedIds, loading, completeChallenge, allCompleted } = useDailyChallenges();
+  const { challenges, completedIds, loading, completeChallenge, allCompleted, challengeStreak, multiplier, multiplierLabel, nextTier } = useDailyChallenges();
 
   if (loading) return <Loader />;
 
