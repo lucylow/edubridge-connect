@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { showAchievementToast } from "@/components/AchievementToast";
 
 export interface GamificationStats {
   xp: number;
