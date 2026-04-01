@@ -18,6 +18,7 @@ const menuConfig = {
     { name: "Quiz", icon: BrainCircuit, href: "/quiz" },
     { name: "Flashcards", icon: Layers, href: "/flashcards" },
     { name: "Progress", icon: Trophy, href: "/progress" },
+    { name: "Challenges", icon: Target, href: "/daily-challenges" },
     { name: "Profile", icon: User, href: "/profile" },
     { name: "Settings", icon: Settings, href: "/settings" },
   ],
