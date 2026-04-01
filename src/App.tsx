@@ -87,6 +87,7 @@ function AppRoutes() {
         <Route path="/ai-assistant" element={<PrivateRoute><AIAssistant /></PrivateRoute>} />
         <Route path="/flashcards" element={<PrivateRoute><Flashcards /></PrivateRoute>} />
         <Route path="/progress" element={<PrivateRoute><Progress /></PrivateRoute>} />
+        <Route path="/daily-challenges" element={<PrivateRoute><DailyChallenges /></PrivateRoute>} />
       </Route>
 
       {/* Fallback */}
