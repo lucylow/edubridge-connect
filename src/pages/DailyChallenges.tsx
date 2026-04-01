@@ -18,7 +18,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 export default function DailyChallenges() {
-  const { challenges, completedIds, loading, completeChallenge, allCompleted } = useDailyChallenges();
+  const { challenges, completedIds, loading, completeChallenge, allCompleted, challengeStreak, multiplier, multiplierLabel, nextTier } = useDailyChallenges();
 
   if (loading) return <Loader />;
 
@@ -51,6 +51,44 @@ export default function DailyChallenges() {
         {allCompleted && (
           <p className="text-xs text-primary font-semibold mt-2 flex items-center gap-1">
             <Sparkles className="h-3.5 w-3.5" /> All challenges completed! Come back tomorrow for more.
+          </p>
+        )}
+      </motion.div>
+
+      {/* Streak Multiplier Card */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+        className="bg-card rounded-2xl p-5 border border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-orange-500/10">
+              <Flame className="h-6 w-6 text-orange-500" />
+            </div>
+            <div>
+              <div className="font-bold text-sm">Challenge Streak: {challengeStreak} day{challengeStreak !== 1 ? "s" : ""}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Current bonus: <span className="font-semibold text-primary">{multiplierLabel}</span>
+                {multiplier > 1 && ` — all XP rewards ×${multiplier}`}
+              </div>
+            </div>
+          </div>
+          <Badge variant="secondary" className="text-xs font-bold">
+            {multiplier > 1 ? `×${multiplier}` : "No bonus"}
+          </Badge>
+        </div>
+        {nextTier && (
+          <div className="mt-3 bg-muted rounded-xl p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">
+                🎯 {nextTier.needed - challengeStreak} more day{nextTier.needed - challengeStreak !== 1 ? "s" : ""} to unlock <span className="font-semibold text-foreground">{nextTier.label}</span>
+              </span>
+              <span className="text-muted-foreground">{challengeStreak}/{nextTier.needed}</span>
+            </div>
+            <Progress value={Math.round((challengeStreak / nextTier.needed) * 100)} className="h-1.5 mt-1.5" />
+          </div>
+        )}
+        {!nextTier && challengeStreak >= 30 && (
+          <p className="text-xs text-primary font-semibold mt-2 flex items-center gap-1">
+            <Crown className="h-3.5 w-3.5" /> Maximum multiplier reached! You're a legend!
           </p>
         )}
       </motion.div>
